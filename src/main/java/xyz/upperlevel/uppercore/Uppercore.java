@@ -5,7 +5,6 @@ import org.bstats.Metrics;
 import org.bukkit.plugin.java.JavaPlugin;
 import xyz.upperlevel.uppercore.command.argument.ArgumentParserSystem;
 import xyz.upperlevel.uppercore.command.commands.UppercoreCommand;
-import xyz.upperlevel.uppercore.database.Connector;
 import xyz.upperlevel.uppercore.database.StorageManager;
 import xyz.upperlevel.uppercore.economy.EconomyManager;
 import xyz.upperlevel.uppercore.gui.GuiManager;
