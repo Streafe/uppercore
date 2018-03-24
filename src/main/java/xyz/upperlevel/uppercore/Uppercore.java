@@ -8,6 +8,7 @@ import xyz.upperlevel.uppercore.economy.EconomyManager;
 import xyz.upperlevel.uppercore.gui.GuiManager;
 import xyz.upperlevel.uppercore.placeholder.PlaceholderUtil;
 import xyz.upperlevel.uppercore.placeholder.message.MessageManager;
+import xyz.upperlevel.uppercore.registry.RegistryRoot;
 import xyz.upperlevel.uppercore.script.ScriptManager;
 import xyz.upperlevel.uppercore.update.DownloadableUpdateChecker;
 import xyz.upperlevel.uppercore.update.SpigetUpdateChecker;
@@ -24,15 +25,14 @@ public class Uppercore extends JavaPlugin {
 
     private static Uppercore instance;
 
+    private RegistryRoot registryRoot;
     private GuiManager guis;
     private ScriptManager scripts;
     private StorageManager storages;
+    private MessageManager messages;
+    private DownloadableUpdateChecker updater;
 
     private Metrics metrics;
-
-    private MessageManager messages;
-
-    private DownloadableUpdateChecker updater;
 
     @Override
     public void onEnable() {
@@ -84,6 +84,10 @@ public class Uppercore extends JavaPlugin {
         return instance.getLogger();
     }
 
+    public static RegistryRoot getRegistryRoot() {
+        return instance.registryRoot;
+    }
+
     public static GuiManager guis() {
         return instance.guis;
     }
@@ -99,4 +103,5 @@ public class Uppercore extends JavaPlugin {
     public static StorageManager storages() {
         return instance.storages;
     }
+
 }

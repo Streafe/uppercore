@@ -57,6 +57,7 @@ dependencies {
     integrationTestCompileOnly "org.projectlombok:lombok:1.16.20"
 
     testCompile "junit:junit:4.12"
+    testCompile "org.mockito:mockito-core:2.+"
 
     compileOnly "org.spigotmc:spigot-api:" + mcVersion
     testCompileOnly "org.spigotmc:spigot-api:" + mcVersion
