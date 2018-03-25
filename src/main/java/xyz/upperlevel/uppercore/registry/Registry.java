@@ -12,8 +12,10 @@ import java.util.stream.Collectors;
 public class Registry<T> {
     @Getter
     private final RegistryRoot root;
+
     @Getter
     private final String name;
+
     @Getter
     private final Registry parent;
 
@@ -137,7 +139,7 @@ public class Registry<T> {
 
         @Override
         public boolean equals(Object other) {
-            return other instanceof Child && ((Child)other).value == value;
+            return other instanceof Child && Objects.equals(((Child)other).value, value);
         }
     }
 }
