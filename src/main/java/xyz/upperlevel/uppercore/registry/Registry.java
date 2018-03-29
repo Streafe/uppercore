@@ -2,9 +2,14 @@ package xyz.upperlevel.uppercore.registry;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.bukkit.configuration.file.YamlConfiguration;
+import xyz.upperlevel.uppercore.config.Config;
+import xyz.upperlevel.uppercore.config.exceptions.InvalidConfigException;
 import xyz.upperlevel.uppercore.registry.RegistryVisitor.VisitResult;
 import xyz.upperlevel.uppercore.util.CollectionUtil;
+import xyz.upperlevel.uppercore.util.FileUtil;
 
+import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -39,6 +44,33 @@ public class Registry<T> {
         boolean conflict = children.putIfAbsent(name, entry) != null;
         if (conflict) {
             throw new IllegalArgumentException("Entry with name '" + name + "' already present");
+        }
+    }
+
+    public void registerFile(File file, RegistryLoader<T> loader) {
+        Config config = Config.wrap(YamlConfiguration.loadConfiguration(file));
+        String id = FileUtil.getName(file).toLowerCase();
+        T object;
+        try {
+            object = loader.load(this, id, config);
+        } catch (InvalidConfigException e) {
+            e.addLocation("in file " + file.getPath());
+            e.addLocation("from registry " + getPath());
+            throw e;
+        }
+        register(id, object);
+    }
+
+    public void registerFolder(File file, RegistryLoader<T> loader, boolean recursive) {
+        File[] files = file.listFiles();
+        if (files == null) return;
+        for (File f : files) {
+            if (f.isDirectory()) {
+                if (!recursive) continue;
+                registerFolder(f, loader, true);
+            } else {
+                registerFile(file, loader);
+            }
         }
     }
 
@@ -101,7 +133,7 @@ public class Registry<T> {
                 .collect(Collectors.toList());
         // Iterate all the "folders" (registries)
         Iterator<Map.Entry<String, Child>> i = l.iterator();
-        Map.Entry<String, Child> e = null;
+        Map.Entry<String, Child> e;
         while (!(e = i.next()).getValue().leaf) {
             VisitResult res = ((Registry<?>)e.getValue().value).visit(visitor);
             if (res == VisitResult.TERMINATE) return VisitResult.TERMINATE;
@@ -114,6 +146,17 @@ public class Registry<T> {
             e = i.hasNext() ? i.next() : null;
         }
         return visitor.postVisitRegistry(this);
+    }
+
+    public String getPath() {
+        List<String> names = new ArrayList<>();
+        Registry<?> current = this;
+        do {
+            names.add(current.getName());
+            current = current.getParent();
+        } while (current != null);
+        Collections.reverse(names);
+        return String.join(".", names);
     }
 
     @Override
