@@ -3,18 +3,21 @@ package xyz.upperlevel.uppercore.registry;
 import org.bukkit.plugin.Plugin;
 import xyz.upperlevel.uppercore.registry.RegistryVisitor.VisitResult;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class RegistryRoot {
     public static final char PLUGIN_PATH_DIVIDER = '@';
-    private Map<Plugin, Registry> pluginRoots = new HashMap<>();
-    private Map<String, Registry> rootsByName = new HashMap<>();
+    private Map<Plugin, Registry<?>> pluginRoots = new HashMap<>();
+    private Map<String, Registry<?>> rootsByName = new HashMap<>();
+    private Map<Class<?>, List<Registry<?>>> registriesByType = new HashMap<>();
 
-    public <T> Registry<T> register(Plugin plugin) {
-        Registry<T> pluginRoot = new Registry<>(this, plugin.getName().toLowerCase(), null);
+    public Registry<?> register(Plugin plugin) {
+        return register(plugin, null);
+    }
+
+    public <T> Registry<T> register(Plugin plugin, Class<T> type) {
+        Registry<T> pluginRoot = new Registry<>(this, type, plugin.getName().toLowerCase(), null);
         boolean conflict = rootsByName.putIfAbsent(pluginRoot.getName(), pluginRoot) != null;
         // Check if there are name conflicts
         if (conflict) {
@@ -38,6 +41,10 @@ public class RegistryRoot {
 
     public Map<Plugin, Registry> getChildren() {
         return Collections.unmodifiableMap(pluginRoots);
+    }
+
+    public Map<Class<?>, List<Registry<?>>> getChildrenByType() {
+        return Collections.unmodifiableMap(registriesByType);
     }
 
     public Object find(String location) {
@@ -64,6 +71,14 @@ public class RegistryRoot {
             if (res == VisitResult.TERMINATE) return VisitResult.TERMINATE;
         }
         return VisitResult.CONTINUE;
+    }
+
+    public void onChildCreate(Registry<?> child) {
+        if (child.getRoot() != this) throw new IllegalArgumentException("Wrong root");
+        List<Registry<?>> sameTypeRegistries = registriesByType.computeIfAbsent(child.getType(), (a) -> new ArrayList<>());
+        if (!sameTypeRegistries.contains(child)) {
+            sameTypeRegistries.add(child);
+        }
     }
 
     @Override

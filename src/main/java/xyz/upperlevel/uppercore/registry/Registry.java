@@ -13,10 +13,12 @@ import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@RequiredArgsConstructor
 public class Registry<T> {
     @Getter
     private final RegistryRoot root;
+
+    @Getter
+    private final Class<?> type;
 
     @Getter
     private final String name;
@@ -26,9 +28,23 @@ public class Registry<T> {
 
     private Map<String, Child> children = new HashMap<>();
 
-    public <O> Registry<O> registerChild(String registryName) {
+    public Registry(RegistryRoot root, Class<?> type, String name, Registry parent) {
+        this.root = root;
+        this.type = type;
+        this.name = name;
+        this.parent = parent;
+        if (type != null) {
+            root.onChildCreate(this);// Update type registers
+        }
+    }
+
+    public Registry<?> registerChild(String registryName) {
+        return registerChild(registryName, null);
+    }
+
+    public <O> Registry<O> registerChild(String registryName, Class<O> type) {
         registryName = registryName.toLowerCase();
-        Registry<O> child = new Registry<>(root, registryName, this);
+        Registry<O> child = new Registry<>(root, type, registryName, this);
         Child entry = new Child(false, child);
         boolean conflict = children.putIfAbsent(registryName, entry) != null;
 
@@ -39,6 +55,7 @@ public class Registry<T> {
     }
 
     public void register(String name, T object) {
+        if (type == null) throw new IllegalStateException("Cannot register object in a folder registry (" + getPath() + ")");
         name = name.toLowerCase();
         Child entry = new Child(true, object);
         boolean conflict = children.putIfAbsent(name, entry) != null;
@@ -149,14 +166,15 @@ public class Registry<T> {
     }
 
     public String getPath() {
-        List<String> names = new ArrayList<>();
+        Deque<String> names = new ArrayDeque<>();
         Registry<?> current = this;
-        do {
-            names.add(current.getName());
+        while (current.getParent() != null) {
+            names.push(current.getName());
             current = current.getParent();
-        } while (current != null);
-        Collections.reverse(names);
-        return String.join(".", names);
+        }
+        // When the cycle is done the only register left is
+        // the plugin root (because it's the only one without a parent)
+        return current.getName() + RegistryRoot.PLUGIN_PATH_DIVIDER + String.join(".", names);
     }
 
     @Override
