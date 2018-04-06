@@ -1,23 +1,49 @@
 package xyz.upperlevel.uppercore.placeholder.message;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.yaml.snakeyaml.nodes.Node;
+import org.yaml.snakeyaml.nodes.ScalarNode;
+import org.yaml.snakeyaml.nodes.SequenceNode;
+import org.yaml.snakeyaml.nodes.Tag;
+import xyz.upperlevel.uppercore.config.ConfigConstructor;
 import xyz.upperlevel.uppercore.placeholder.PlaceholderRegistry;
 import xyz.upperlevel.uppercore.placeholder.PlaceholderValue;
 import xyz.upperlevel.uppercore.util.TextUtil;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@AllArgsConstructor
+import static xyz.upperlevel.uppercore.config.ConfigParser.checkNodeTag;
+
 public class Message {
     @Getter
-    private List<PlaceholderValue<String>> lines;
+    private final List<PlaceholderValue<String>> lines;
+
+    public Message(List<PlaceholderValue<String>> lines) {
+        this.lines = lines;
+    }
+
+    @ConfigConstructor
+    public Message(Node node) {
+        checkNodeTag(node, Arrays.asList(Tag.STR, Tag.SEQ));
+        if (node.getTag() == Tag.STR) {
+            String messageStr = ((ScalarNode)node).getValue();
+            lines = Collections.singletonList(PlaceholderValue.stringValue(messageStr));
+        } else {// node.getTag() == Tag.SEQ
+            lines = ((SequenceNode) node).getValue().stream()
+                    .map(lineNode -> {
+                        checkNodeTag(lineNode, Tag.STR);
+                        return PlaceholderValue.stringValue(((ScalarNode)lineNode).getValue());
+                    })
+                    .collect(Collectors.toList());
+        }
+    }
 
     public List<String> get(Player player) {
         return lines.stream().map(p -> p.resolve(player)).collect(Collectors.toList());

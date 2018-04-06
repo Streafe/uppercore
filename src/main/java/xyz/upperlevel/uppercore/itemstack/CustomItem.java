@@ -11,11 +11,15 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import xyz.upperlevel.uppercore.config.Config;
+import xyz.upperlevel.uppercore.config.ConfigConstructor;
+import xyz.upperlevel.uppercore.config.ConfigProperty;
 import xyz.upperlevel.uppercore.config.exceptions.InvalidConfigException;
 import xyz.upperlevel.uppercore.itemstack.specials.*;
+import xyz.upperlevel.uppercore.placeholder.Placeholder;
 import xyz.upperlevel.uppercore.placeholder.PlaceholderRegistry;
 import xyz.upperlevel.uppercore.placeholder.PlaceholderUtil;
 import xyz.upperlevel.uppercore.placeholder.PlaceholderValue;
+import xyz.upperlevel.uppercore.util.EnchantGlow;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -88,6 +92,23 @@ public class CustomItem implements ItemResolver {
                 else
                     enchantments.put(ench, PlaceholderValue.intValue(e.getValue().toString()));
             }
+        }
+    }
+
+    // TODO: @ConfigConstructor (get custom parser based on type)
+    public CustomItem(@ConfigProperty(name = "type") Material type,
+                      @ConfigProperty(name = "data", optional = true) PlaceholderValue<Short> data,
+                      @ConfigProperty(name = "name", optional = true) String rawName,
+                      @ConfigProperty(name = "lore", optional = true) List<PlaceholderValue<String>> lore,
+                      @ConfigProperty(name = "flags", optional = true) List<ItemFlag> flags,
+                      @ConfigProperty(name = "enchantments", optional = true) Map<Enchantment, PlaceholderValue<Integer>> enchantments) {
+        this.type = type;
+        this.data = data != null ? data : PlaceholderValue.fake((short)0);
+        this.displayName = rawName == null ? null : PlaceholderValue.stringValue(ChatColor.RESET.toString() + rawName);
+        this.lore = lore != null ? lore : Collections.emptyList();
+        this.flags = flags != null ? flags : Collections.emptyList();
+        if (enchantments != null) {
+            this.enchantments.putAll(enchantments);
         }
     }
 
